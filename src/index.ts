@@ -3,9 +3,7 @@ import { Packager } from "app-builder-lib";
 import { Arch, log } from "builder-util";
 import { HttpPublisher, PublishContext, UploadTask } from "electron-publish";
 import { ClientRequest } from "http";
-// import { createReadStream } from 'fs-extra-p';
-import { resolve } from "path";
-import posixPath from "path/posix";
+const path = require('path');
 
 interface AliOssPublishContext extends PublishContext {
   readonly packager: Packager;
@@ -43,10 +41,10 @@ export default class AliOssPublisher extends HttpPublisher {
       ...publishConfig,
     };
     if (publishConfig.localConfig) {
-      const localConfig = require(resolve(
+      const localConfig = path.resolve(
         this.context.packager.appDir,
         config.localConfig
-      ));
+      );
       config = {
         ...config,
         ...localConfig,
@@ -82,7 +80,7 @@ export default class AliOssPublisher extends HttpPublisher {
     const config = this.config;
     let uploadName: string = fileName;
     if (config.path) {
-      uploadName = posixPath.join(config.path, fileName);
+      uploadName = path.posix.join(config.path, fileName);
     }
 
     return this.context.cancellationToken.createPromise(
