@@ -1,16 +1,14 @@
 import OSS from "ali-oss";
 import { Packager } from "app-builder-lib";
 import { Arch, log } from "builder-util";
-import { HttpPublisher, PublishContext, UploadTask } from "electron-publish";
+import { HttpPublisher, PublishContext } from "electron-publish";
 import { ClientRequest } from "http";
-const path = require('path');
+import { join, resolve } from 'path';
 
 interface AliOssPublishContext extends PublishContext {
   readonly packager: Packager;
 }
-interface AliOssUploadTask extends UploadTask {
-  readonly packager: Packager;
-}
+
 interface AliOssPublisherConfig {
   bucket: string;
   region: string;
@@ -24,7 +22,6 @@ interface AliOssPublisherConfig {
 }
 export default class AliOssPublisher extends HttpPublisher {
   public readonly providerName = "alioss";
-  protected useSafeName: boolean = true;
   private readonly client: OSS;
   protected readonly context!: AliOssPublishContext;
   protected config: AliOssPublisherConfig;
@@ -32,19 +29,17 @@ export default class AliOssPublisher extends HttpPublisher {
   protected constructor(
     context: AliOssPublishContext,
     publishConfig: AliOssPublisherConfig,
-    useSafeArtifactName?: boolean
   ) {
     super(context);
     // const config = this.getConfig();
-    this.useSafeName = useSafeArtifactName || true;
     let config = {
       ...publishConfig,
     };
     if (publishConfig.localConfig) {
-      const localConfig = path.resolve(
+      const localConfig = require(resolve(
         this.context.packager.appDir,
         config.localConfig
-      );
+      ));
       config = {
         ...config,
         ...localConfig,
@@ -80,7 +75,7 @@ export default class AliOssPublisher extends HttpPublisher {
     const config = this.config;
     let uploadName: string = fileName;
     if (config.path) {
-      uploadName = path.posix.join(config.path, fileName);
+      uploadName = join(config.path, fileName);
     }
 
     return this.context.cancellationToken.createPromise(
@@ -141,6 +136,7 @@ export default class AliOssPublisher extends HttpPublisher {
             log.error({message: "Woops,Timeout!"}, "ali-oss-publisher:uploads:error");
             // do ConnectionTimeoutError operation
           }
+          console.log("error", e);
           log.error({message: e.message || e}, "ali-oss-publisher:uploads:error");
         }
       }
